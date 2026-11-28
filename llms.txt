@@ -4,10 +4,10 @@
 
 ## What it does
 
-- The bridge (`venice_bridge.py`) runs an OpenAI Chat Completions server on `127.0.0.1:18891` (`POST /v1/chat/completions`, `GET /v1/models`, `GET /health`, `GET /stats`, `POST /reload`, `POST /v1/audio/transcriptions`, `POST /v1/images/generations`); chat accepts base64 image and document attachments.
+- The bridge (`venice_bridge.py`) runs an OpenAI Chat Completions server on `127.0.0.1:18891` (`POST /v1/chat/completions`, `GET /v1/models`, `GET /health`, `GET /stats`, `POST /reload`, `POST /v1/audio/transcriptions`, `POST /v1/embeddings`, image tools (`POST /v1/images/generations`, `/v1/images/edits`, `/v1/image/upscale`, `/v1/image/background-remove`, `GET /v1/image/styles`; 0-credit models only unless `VENICE_ALLOW_CREDIT_IMAGES=1`)); chat accepts base64 image and document attachments.
 - The optional adapter (`venice_adapters.py`, standard library only) runs on `127.0.0.1:18892` and serves Anthropic Messages (`POST /v1/messages`, `/v1/messages/count_tokens`) for Claude Code and OpenAI Responses (`POST /v1/responses`) for Codex CLI, translating them to Chat Completions for the bridge.
 - The `claude-venice` launcher runs the Claude Code CLI on the adapter in an isolated profile (`~/.claude-venice`); it skips Claude Code's permission prompts by default (`VENICE_CLAUDE_SKIP_PERMS=0` turns that off).
-- Forwards requests to the venice.ai web app's own backend, signed in with the user's browser login (the `__client` cookie of `clerk.venice.ai`). It does not use the paid Venice API and needs no API key.
+- Forwards requests to the venice.ai web app's own backend, signed in with the user's browser login (the `__client` cookie of `clerk.venice.ai`). It does not use the paid Venice API and needs no API key (the launcher's `--venice-api` / `--claude` backends are opt-in and metered).
 - `VENICE_BRIDGE_ROUTE=auto` (default) uses Venice's plain chat route, where no Venice agent loop swallows tool calls, and falls back to the agent route for a model the chat route does not know; `chat` and `agent` force one route.
 - Emulates tool calling in text: the tool list goes into the prompt, and a tolerant parser plus native and tagged call readers turn the model's reply into OpenAI `tool_calls`; foreign tool and argument names are routed to the client's tools. Includes retries, a completion check, a stream gate, and an optional early-stop judge.
 - A model id `<backend>/<model>` (e.g. `ollama/qwen3:8b`, `lmstudio/<id>`) goes straight to a local OpenAI-compatible server (Ollama, LM Studio, llama.cpp, MLX via `~/.config/venice-bridge/backends.json`), with no Venice login or quota.
@@ -37,7 +37,7 @@
 - Automating a logged-in web session may be against Venice's terms of service; use only your own account.
 - Tested on a paid plan (Pro). The agent route needs a paid plan (a free account gets `403 creator_access_required`); a free account has a very small chat quota.
 - The web plan is limited by a daily request quota, not tokens; reported token counts are estimates.
-- macOS only so far. No images. Codex's namespace tools (MCP, multi-agent) and built-in `web_search` do not pass through the adapter.
+- macOS only so far. Codex's namespace tools (MCP, multi-agent) and built-in `web_search` do not pass through the adapter.
 - With tools, short replies are sent only when complete. Tool calling is emulated; Venice's fast models are weak at long agentic chains and need their work checked.
 
 ## Links

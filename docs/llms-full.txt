@@ -2,7 +2,7 @@
 
 > venice-bridge is a free, open-source local bridge for macOS that lets OpenCode, Claude Code, Codex CLI and other OpenAI- or Anthropic-compatible coding agents use a venice.ai web subscription, with working tool calls.
 
-Version 0.3.0 · MIT · Repository: https://github.com/nsozturk/venice-bridge · Docs: https://nsozturk.github.io/venice-bridge/
+Version 0.4.0 · MIT · Repository: https://github.com/nsozturk/venice-bridge · Docs: https://nsozturk.github.io/venice-bridge/
 
 ---
 
@@ -30,7 +30,7 @@ Tool routing reference: [docs/TOOL_ROUTING.md](https://github.com/nsozturk/venic
 >   your own risk, with your own account. Do not share cookies or accounts.
 > - It was tested on a paid Venice web plan (Pro). The agent route needs a paid plan (a free account gets
 >   `403 creator_access_required`), and a free account has a very small chat quota.
-> - macOS only so far. No images. With tools, short replies are sent only when complete; long prose is
+> - macOS only so far. With tools, short replies are sent only when complete; long prose is
 >   streamed while it is written.
 > - Tool calling is emulated in text. Venice's fast models are weak at long agentic chains (see
 >   [Model quality](#model-quality)); use it for cheap exploratory runs, not high-stakes work.
@@ -165,6 +165,17 @@ claude-venice --quota                                     # remaining web quota 
 ```
 
 `-m` and `--lean` may appear anywhere before `--`; `--models` and `--quota` must be the first argument. Everything else is passed to `claude`.
+
+Other backends (opt-in, each with its own key; the Venice web plan is not used):
+
+| Flag | Backend | Key (env, or a `chmod 600` file) | Cost |
+|---|---|---|---|
+| `--venice-api` / `--api` | Official Venice API via the adapter's `/venice-api` route | `VENICE_API_KEY` or `~/.config/venice-bridge/venice-api-key.txt` | **metered** (Venice API credits) |
+| `--claude` / `--anthropic` | Official Anthropic API, direct | `ANTHROPIC_API_KEY` / `CLAUDE_API_KEY` or `~/.config/venice-bridge/anthropic-api-key.txt` | **metered**; Claude Code's default effort unless `CLAUDE_API_EFFORT=<level>` |
+| `--unquant`, `--zai`, `--go` / `--opencode-go` | Unquant, Z.AI Coding Plan, OpenCode Go | `UNQUANT_API_KEY`, `ZAI_API_KEY`, `OPENCODE_GO_API_KEY` or their files | per plan |
+
+`<flag> --models` lists that backend's models. Keys are sent from a temporary `0600` header file, never on the
+`curl` command line.
 
 What the launcher does:
 
@@ -515,6 +526,7 @@ Environment variables are read when a process starts. Set them before you start 
 | `VENICE_BRIDGE_MAX_TOTAL_ATTACHMENT_BYTES` | `20971520` | Total attachment limit per request. |
 | `VENICE_BRIDGE_MAX_AUDIO_BYTES` | `26214400` | Upload limit for `/v1/audio/transcriptions`. |
 | `VENICE_BRIDGE_ASR_MODEL` | `nvidia/parakeet-tdt-0.6b-v3` | Venice speech-to-text model. |
+| `VENICE_ALLOW_CREDIT_IMAGES` | unset | `1` allows image / edit models and options that spend Venice credits. Off by default: only 0-credit models are used. |
 
 Command-line options: `--host` (default `VENICE_BRIDGE_HOST`, else `127.0.0.1`) and `--port` (default `18891`).
 The bridge has no client authentication, so keep the host on loopback.
@@ -549,7 +561,12 @@ The adapter has no command-line options.
 | `GET /health` | Session state, remaining web chat quota (`chat_quota`), cache counters (`cache`). | `200`; `503` no usable login |
 | `GET /stats` | Live runtime counters (requests, models, TTFT, retries, cache, pool, endpoint counts); `?format=html` renders a minimal dark dashboard. | `200` |
 | `POST /v1/audio/transcriptions` | OpenAI Whisper-compatible speech-to-text (`multipart/form-data`: `file`, `model`, `response_format` `json`/`text`/`verbose_json`), backed by Venice ASR (`nvidia/parakeet-tdt-0.6b-v3`). Supports mp3/wav/m4a/webm/ogg/flac up to `VENICE_BRIDGE_MAX_AUDIO_BYTES` (25 MB). | `200`; `400` bad format; `413` too large; `502` upstream failure |
-| `POST /v1/images/generations` | OpenAI Image Generation (`{"prompt", "n": 1, "size", "response_format": "b64_json"|"url"}`, where `url` returns a `data:` URI), backed by Venice in-chat image generation (`image_chunk`). Uses 1 chat + 1 image quota call. | `200`; `400` invalid prompt / `n != 1`; `502` upstream failure |
+| `POST /v1/images/generations` | OpenAI Image Generation (`{"prompt", "n": 1–4, "size", "model", "response_format": "b64_json"|"url"}`, `url` returns a `data:` URI), backed by Venice's web `/api/inference/image`; one Venice call per image. Only the account's free (0-credit) image models are accepted unless `VENICE_ALLOW_CREDIT_IMAGES=1`. `enhance_prompt: true` rewrites the prompt first (`revised_prompt`). | `200`; `400` invalid prompt / `n` / non-free model; `502` upstream failure |
+| `POST /v1/image/generate` | Venice-API-shaped generation (`variants`, `style_preset`, `negative_prompt`, `steps`, `cfg_scale`, `seed`, `aspect_ratio`, `resolution`, `return_binary`) → `{"images": [...]}` or raw image. | as above |
+| `POST /v1/images/edits`, `POST /v1/image/edit` | Edit or combine 1–6 images (`image`/`images` as base64 or `data:` URI, optional `mask`) via Venice `/api/inference/multi-edit`; free edit models only (`qwen-edit-uncensored`, `firered-image-edit`) unless `VENICE_ALLOW_CREDIT_IMAGES=1`. | `200`; `400` bad input / non-free model; `502` upstream failure |
+| `POST /v1/image/upscale` | Upscale one image (`{"image", "scale": 1–4, "enhance", "enhance_prompt", "replication"}`) via Venice `/api/inference/enhance`. Returns the image bytes; `response_format: "b64_json"` returns `{"images": [...]}`. | `200`; `400` bad image / scale; `502` upstream failure |
+| `POST /v1/image/background-remove` | Remove the background of one image (`{"image"}` as base64 or `data:` URI; remote URLs are refused) via Venice `/api/inference/background-remove`. Returns a transparent PNG (or `b64_json`). | `200`; `400` bad image / remote URL; `502` upstream failure |
+| `GET /v1/image/styles` | Image style presets. | `200` |
 | `POST /reload` | Drops cached auth (cookie, session, token, attestation) and the local quota lock (also the over-quota state of `venice-auto`). | `200` |
 
 ### Adapter, `127.0.0.1:18892`
@@ -560,7 +577,8 @@ The adapter has no command-line options.
 | `POST /v1/messages/count_tokens` | An estimate (`input_tokens` ≈ request size / 4). | `200` |
 | `POST /v1/responses` | OpenAI Responses (Codex CLI), streaming and non-streaming, with function and freeform tools. | as `/v1/messages` |
 | `GET /v1/models` | The upstream's model list, passed through. | `200`; `502` |
-| `GET /health` | `{"ok": true, "upstream": "...", "default_model": "..."}`. It does not check the bridge. | `200` |
+| `GET /health` | `{"ok": true, "upstream": "...", "venice_api_upstream": "...", "default_model": "..."}`. It does not check the bridge. | `200` |
+| `POST /venice-api/v1/messages`, `POST /venice-api/v1/responses`, `GET /venice-api/v1/models` | Same conversion, sent to the official Venice API (`VENICE_API_UPSTREAM`, default `https://api.venice.ai/api/v1`) with the **caller's** key (`Authorization: Bearer` or `x-api-key`); the model id is passed through and `venice_parameters.include_venice_system_prompt` is `false`. Metered by Venice. The plain routes never forward the caller's key. | `200`; `401` no key; upstream status passed through; `502` |
 
 On both processes any other path answers `404`.
 
@@ -1055,7 +1073,7 @@ Live check of a running setup: `claude-venice --quota` prints `Venice web quota 
 # Tool routing — Claude Code / OpenCode / Codex → Venice
 
 How a client's tools reach the Venice web model and how the model's tool calls are mapped back.
-Source of truth is the code (`venice_bridge.py`, `venice_adapters.py`); this page describes v0.3.0.
+Source of truth is the code (`venice_bridge.py`, `venice_adapters.py`); this page describes v0.4.0.
 
 ## TL;DR
 

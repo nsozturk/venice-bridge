@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "venice-bridge"
-version = "0.3.0"
+version = "0.4.0"
 description = "Local OpenAI- and Anthropic-compatible bridge that lets OpenCode, Claude Code, Codex CLI and other coding agents use a venice.ai web subscription, with working tool calls."
 readme = "README.md"
 requires-python = ">=3.10"

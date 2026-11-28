@@ -1,7 +1,7 @@
 # Tool routing — Claude Code / OpenCode / Codex → Venice
 
 How a client's tools reach the Venice web model and how the model's tool calls are mapped back.
-Source of truth is the code (`venice_bridge.py`, `venice_adapters.py`); this page describes v0.3.0.
+Source of truth is the code (`venice_bridge.py`, `venice_adapters.py`); this page describes v0.4.0.
 
 ## TL;DR
 

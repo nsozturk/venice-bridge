@@ -32,7 +32,7 @@
   "description": "venice-bridge is a free, open-source local bridge for macOS that lets OpenCode, Claude Code, Codex CLI and other OpenAI- or Anthropic-compatible coding agents use a venice.ai web subscription, with working tool calls.",
   "operatingSystem": "macOS",
   "applicationCategory": "DeveloperApplication",
-  "softwareVersion": "0.3.0",
+  "softwareVersion": "0.4.0",
   "license": "https://opensource.org/licenses/MIT",
   "codeRepository": "https://github.com/nsozturk/venice-bridge",
   "downloadUrl": "https://github.com/nsozturk/venice-bridge",
@@ -276,7 +276,7 @@ footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border
 <body>
 
 <header class="navbar">
-  <a href="#overview" class="brand">venice-bridge <span class="badge">v0.3.0</span></a>
+  <a href="#overview" class="brand">venice-bridge <span class="badge">v0.4.0</span></a>
   <div class="nav-actions">
     <a href="#quick-start" class="nav-link">Quick start</a>
     <a href="#how-it-works" class="nav-link">How it works</a>
@@ -380,11 +380,11 @@ footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border
       </div>
 
       <div class="grid">
-        <div class="card"><h4>OpenAI and Anthropic APIs</h4><p>Bridge: <code>POST /v1/chat/completions</code>, <code>GET /v1/models</code>, <code>GET /health</code>, <code>POST /reload</code>. Adapter: <code>POST /v1/messages</code> and <code>POST /v1/responses</code>.</p></div>
+        <div class="card"><h4>OpenAI and Anthropic APIs</h4><p>Bridge: <code>POST /v1/chat/completions</code>, <code>GET /v1/models</code>, <code>GET /health</code>, <code>POST /reload</code>, image tools (generate, edit, upscale, background removal). Adapter: <code>POST /v1/messages</code> and <code>POST /v1/responses</code>.</p></div>
         <div class="card"><h4>Working tool calls</h4><p>Venice's web routes hide client tools from the model, so the bridge emulates them in text and returns real OpenAI <code>tool_calls</code>.</p></div>
         <div class="card"><h4>Web subscription, no API key</h4><p>Uses the <code>__client</code> cookie of <code>clerk.venice.ai</code>. Tested on a paid Venice web plan (Pro). Limited by requests per day, not tokens.</p></div>
         <div class="card"><h4>Local models too</h4><p><code>ollama/&lt;model&gt;</code>, <code>lmstudio/&lt;id&gt;</code> or your own backend: passed straight through, no Venice login, no quota.</p></div>
-        <div class="card"><h4>Honest limits</h4><p>macOS only so far. No images. With tools, short replies are sent only when complete. Open models sometimes need a retry.</p></div>
+        <div class="card"><h4>Honest limits</h4><p>macOS only so far. With tools, short replies are sent only when complete. Open models sometimes need a retry.</p></div>
       </div>
 
       <div class="callout" role="note">
@@ -396,6 +396,12 @@ footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border
     <section id="whats-new">
       <h2>What's new</h2>
       <p>Full history: <a href="https://github.com/nsozturk/venice-bridge/blob/main/CHANGELOG.md">CHANGELOG.md</a> · <a href="https://github.com/nsozturk/venice-bridge/releases">Releases</a> · <a href="https://pypi.org/project/venice-bridge/">PyPI</a></p>
+      <h3>v0.4.0 <small>2026-11-28</small></h3>
+      <ul>
+        <li><strong>Image tools:</strong> generation, edit / combine with mask, upscale (1&ndash;4&times;), background removal and style presets, all on the Venice web plan's 0-credit models (<code>VENICE_ALLOW_CREDIT_IMAGES=1</code> opts in to credit models).</li>
+        <li><strong><code>claude-venice --venice-api</code> and <code>--claude</code>:</strong> optional backends for the official Venice API and the official Anthropic API with your own key (both metered, opt-in only).</li>
+        <li><strong>Security:</strong> multipart text fields are sent with <code>curl --form-string</code> (a prompt starting with <code>@</code> could have uploaded a local file), and <code>--models</code> keys go through a <code>0600</code> header file instead of the command line.</li>
+      </ul>
       <h3>v0.3.0 <small>2026-11-22</small></h3>
       <ul>
         <li>Added <code>POST /v1/embeddings</code> (OpenAI-compatible <code>text-embedding-bge-m3</code> 1024-dim vectors) and thinking-mode preservation on tool-calling turns (<code>:think</code> / <code>VENICE_REASONING=1</code>).</li>
@@ -866,6 +872,7 @@ claude-venice -m venice-auto               # works through the adapter, because 
           <tr><td><code>VENICE_X_SEARCH</code></td><td>off</td><td><code>1</code> turns on Venice X search for every request.</td></tr>
           <tr><td><code>VENICE_REASONING</code></td><td>off</td><td><code>1</code> turns on reasoning for every request that declares no tools. See <a href="#reasoning">Reasoning</a>.</td></tr>
           <tr><td><code>VENICE_EXCLUDE_MODELS</code></td><td>unset</td><td>Comma-separated glob patterns hidden from <code>GET /v1/models</code> (on top of credit models and <code>e2ee-*</code>), for example <code>qwen3-vl-*,venice-uncensored-*</code>.</td></tr>
+          <tr><td><code>VENICE_ALLOW_CREDIT_IMAGES</code></td><td>unset</td><td><code>1</code> allows image / edit models and options that spend Venice credits. Off by default: only 0-credit models are used.</td></tr>
           <tr><td><code>VENICE_AUTO_MODELS</code></td><td><code>deepseek-v4-1-flash-uncensored,ollama/qwen3:8b</code></td><td>Candidates for <code>venice-auto</code>: the first Venice id normally, the first local <code>&lt;backend&gt;/&lt;model&gt;</code> while the quota is used up. See <a href="#venice-auto">venice-auto</a>.</td></tr>
           <tr><td><code>VENICE_BRIDGE_BACKENDS</code></td><td><code>~/.config/venice-bridge/backends.json</code></td><td>Local backends file. See <a href="#local-models">Local models</a>.</td></tr>
           <tr><td><code>VENICE_BRIDGE_CACHE</code></td><td>on</td><td><code>0</code> disables the response cache. See <a href="#response-cache">Response cache</a>.</td></tr>
@@ -927,6 +934,22 @@ claude-venice -m venice-auto               # works through the adapter, because 
       <h3><code>POST /reload</code></h3>
       <p>Drops the cached auth (Clerk cookie, session, JWT, attestation) and the quota lock (also the over-quota state of <code>venice-auto</code>). Answers 200 <code>{"ok": true}</code>.</p>
       <pre><code>curl -s -X POST http://127.0.0.1:18891/reload</code></pre>
+
+      <h3 id="api-images">Image tools</h3>
+      <p>Backed by the Venice web app's own image routes. Only the account's 0-credit image and edit models are accepted unless <code>VENICE_ALLOW_CREDIT_IMAGES=1</code>; <code>acceptCreditFallback</code> is always sent as <code>false</code>. Images go in as base64 or <code>data:</code> URIs; remote URLs are refused.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Endpoint</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td><code>POST /v1/images/generations</code></td><td>OpenAI Image Generation (<code>prompt</code>, <code>n</code> 1&ndash;4, <code>size</code>, <code>model</code>, <code>response_format</code>); one Venice call per image. <code>enhance_prompt: true</code> rewrites the prompt first.</td></tr>
+          <tr><td><code>POST /v1/image/generate</code></td><td>Venice-API-shaped generation (<code>variants</code>, <code>style_preset</code>, <code>negative_prompt</code>, <code>steps</code>, <code>cfg_scale</code>, <code>seed</code>, <code>aspect_ratio</code>, <code>resolution</code>, <code>return_binary</code>).</td></tr>
+          <tr><td><code>POST /v1/images/edits</code>, <code>POST /v1/image/edit</code></td><td>Edit or combine 1&ndash;6 images, optional <code>mask</code> (Venice <code>multi-edit</code>).</td></tr>
+          <tr><td><code>POST /v1/image/upscale</code></td><td>Upscale one image, <code>scale</code> 1&ndash;4 (Venice <code>enhance</code>). Raw image, or <code>{"images": [...]}</code> with <code>response_format: "b64_json"</code>.</td></tr>
+          <tr><td><code>POST /v1/image/background-remove</code></td><td>Transparent PNG of one image (Venice <code>background-remove</code>).</td></tr>
+          <tr><td><code>GET /v1/image/styles</code></td><td>Image style presets.</td></tr>
+        </tbody>
+      </table></div>
+      <pre><code>curl -s http://127.0.0.1:18891/v1/images/generations -H 'Content-Type: application/json' \
+  -d '{"prompt":"a lighthouse at dusk","n":1,"response_format":"b64_json"}'</code></pre>
 
       <h3 id="api-adapter">Adapter (127.0.0.1:18892)</h3>
       <p>Adapter: base URL <code>http://127.0.0.1:18892</code>. It ignores authentication headers and forwards every model call to its upstream's <code>/chat/completions</code>. An upstream error status is passed on before any stream starts, so the client sees the real status; an upstream that does not answer gives 502.</p>
@@ -1108,7 +1131,7 @@ claude-venice --quota                   <span class="c"># Venice web quota  rema
     <div class="no-results" id="noResults">No section matches your search.</div>
 
     <footer>
-      <p>venice-bridge v0.3.0 · MIT · <a href="https://github.com/nsozturk/venice-bridge">github.com/nsozturk/venice-bridge</a> · Unofficial, not affiliated with Venice.ai.</p>
+      <p>venice-bridge v0.4.0 · MIT · <a href="https://github.com/nsozturk/venice-bridge">github.com/nsozturk/venice-bridge</a> · Unofficial, not affiliated with Venice.ai.</p>
     </footer>
   </main>
 </div>

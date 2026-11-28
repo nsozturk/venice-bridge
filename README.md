@@ -37,7 +37,7 @@ Tool routing reference: [docs/TOOL_ROUTING.md](https://github.com/nsozturk/venic
 >   your own risk, with your own account. Do not share cookies or accounts.
 > - It was tested on a paid Venice web plan (Pro). The agent route needs a paid plan (a free account gets
 >   `403 creator_access_required`), and a free account has a very small chat quota.
-> - macOS only so far. No images. With tools, short replies are sent only when complete; long prose is
+> - macOS only so far. With tools, short replies are sent only when complete; long prose is
 >   streamed while it is written.
 > - Tool calling is emulated in text. Venice's fast models are weak at long agentic chains (see
 >   [Model quality](#model-quality)); use it for cheap exploratory runs, not high-stakes work.

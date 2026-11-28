@@ -2,11 +2,11 @@
 
 > venice-bridge is a free, open-source local bridge for macOS that lets OpenCode, Claude Code, Codex CLI and other OpenAI- or Anthropic-compatible coding agents use a venice.ai web subscription, with working tool calls.
 
-Unofficial: not affiliated with, endorsed by, or supported by Venice.ai. It uses undocumented web endpoints and your own logged-in session, which may be against Venice's terms of service. Use your own account only. Version 0.3.0, MIT.
+Unofficial: not affiliated with, endorsed by, or supported by Venice.ai. It uses undocumented web endpoints and your own logged-in session, which may be against Venice's terms of service. Use your own account only. Version 0.4.0, MIT.
 
 ## What it does
 
-- Two local processes. The bridge (`venice_bridge.py` plus `tolerant_parser.py`) serves OpenAI Chat Completions on `127.0.0.1:18891`: `POST /v1/chat/completions` (streaming and non-streaming), `GET /v1/models`, `GET /health`, `GET /stats`, `POST /reload`, `POST /v1/audio/transcriptions`, `POST /v1/images/generations`. Chat accepts base64 image and document attachments.
+- Two local processes. The bridge (`venice_bridge.py` plus `tolerant_parser.py`) serves OpenAI Chat Completions on `127.0.0.1:18891`: `POST /v1/chat/completions` (streaming and non-streaming), `GET /v1/models`, `GET /health`, `GET /stats`, `POST /reload`, `POST /v1/audio/transcriptions`, `POST /v1/embeddings`, image tools (`POST /v1/images/generations`, `/v1/images/edits`, `/v1/image/upscale`, `/v1/image/background-remove`, `GET /v1/image/styles`; 0-credit models only unless `VENICE_ALLOW_CREDIT_IMAGES=1`). Chat accepts base64 image and document attachments.
 - The optional adapter (`venice_adapters.py`, stdlib only) on `127.0.0.1:18892` translates Anthropic Messages (`POST /v1/messages`, `/v1/messages/count_tokens`) and OpenAI Responses (`POST /v1/responses`) to Chat Completions and forwards them to the bridge. That is how Claude Code and Codex CLI work.
 - Forwards to the venice.ai web app's own backend with your browser login (`__client` cookie of `clerk.venice.ai`). No Venice API key. Tested on a paid Venice web plan (Pro).
 - `VENICE_BRIDGE_ROUTE=auto` (default) uses Venice's plain chat route (no Venice agent loop, no swallowed calls) and falls back to the agent route for a model the chat route does not know; `chat` and `agent` force one route.
@@ -42,7 +42,7 @@ Unofficial: not affiliated with, endorsed by, or supported by Venice.ai. It uses
 
 ## Limits
 
-- macOS only so far (Linux and Windows untested). No images.
+- macOS only so far (Linux and Windows untested).
 - With tools, short replies are sent only when complete. Tool calling is emulated; open models sometimes need a retry.
 - Venice's fast models are weak at long agentic chains (measured on one machine, one account): good for cheap exploratory runs, not high-stakes work.
 - The agent route needs a paid plan (a free account gets `403 creator_access_required`); a free account has a very small chat quota.

@@ -3,7 +3,7 @@
 All notable changes to venice-bridge. Versions follow [Semantic Versioning](https://semver.org/).
 Releases: <https://github.com/nsozturk/venice-bridge/releases> · PyPI: <https://pypi.org/project/venice-bridge/>
 
-## Unreleased
+## 0.4.0 — 2026-11-28
 
 ### Added
 - **Image tools from the Venice web app** — generation straight through `/api/inference/image`
